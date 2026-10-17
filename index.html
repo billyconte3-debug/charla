@@ -90,6 +90,8 @@ h1{margin:0;font:700 28px/1.1 var(--display);letter-spacing:-.01em}
 .heardbox .final{font:600 26px/1.25 var(--display)}
 .heardbox .interim{font:500 26px/1.25 var(--display);color:var(--mute)}
 .heardbox .empty{font:400 17px/1.4 var(--body);color:var(--mute)}
+.heardbox .heardEn{font:400 19px/1.4 var(--body);color:var(--ink);padding-top:10px;border-top:1px solid var(--line)}
+.heardbox .heardEn b{color:var(--mute);font-weight:600}
 @media (max-width:600px){
   .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
   .chips::-webkit-scrollbar{display:none}
@@ -141,6 +143,7 @@ h1{margin:0;font:700 28px/1.1 var(--display);letter-spacing:-.01em}
       <p class="esmean" id="esMean"></p>
     </div>
     <p id="heardText" class="empty">What you say appears here.</p>
+    <p id="heardEn" class="heardEn" hidden></p>
   </div>
 
   <div class="dock">
@@ -253,7 +256,7 @@ var target=null,voices=[],rec=null,pos={},hf={on:false};
 function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
 function note(t){statusEl.textContent=t||"";statusEl.hidden=!t}
 function toEnd(){thread.scrollTop=thread.scrollHeight}
-var heardText=$("#heardText"),esBox=$("#esBox"),esBig=$("#esBig"),esSub=$("#esSub"),esMean=$("#esMean");
+var heardEn=$("#heardEn"),heardText=$("#heardText"),esBox=$("#esBox"),esBig=$("#esBig"),esSub=$("#esSub"),esMean=$("#esMean");
 function showSpanish(e){
   esBig.textContent=e.es||"";
   esSub.textContent=e.sounds?"Sounds like: "+e.sounds:"";
@@ -261,7 +264,13 @@ function showSpanish(e){
   esSub.hidden=!e.sounds;esMean.hidden=!e.en;
   esBox.hidden=!e.es;
 }
+function showHeardEn(t){
+  heardEn.textContent="";
+  if(t){var b=document.createElement("b");b.textContent="In English: ";heardEn.appendChild(b);heardEn.appendChild(document.createTextNode(t))}
+  heardEn.hidden=!t;
+}
 function showHeard(text,interim,emptyMsg){
+  showHeardEn("");
   if(!text){heardText.textContent=emptyMsg||"What you say appears here.";heardText.className="empty";return}
   heardText.textContent=text;
   heardText.className=interim?"interim":"final";
@@ -514,6 +523,7 @@ async function hfTeach(e,withMeaning,run){
   await hfSay(e.es,"es-ES",0.55,run);
 }
 async function hfJudge(e,run,unprompted){
+  showHeardEn(e.en);
   if(hfCur!==e){hfCur=e;hfCard=addCard(e,false,"")}
   await hfSay(PRAISE[Math.floor(Math.random()*PRAISE.length)],"es-ES",1,run);
   if(unprompted){await pause(200);await hfSay("That means: "+e.en,"en-US",0.95,run)}
@@ -535,9 +545,11 @@ async function hfDoCommand(c,run){
 
 /* Teaching a line Claude wrote: Spanish normal, Spanish slow, then Claude's short English follow-up */
 async function hfTeachClaude(c,run){
+  showHeardEn(c.heardEn);
   hfCur=c;
   hfCard=addCard(c,false,c.ask);
   hfSet("Listen…",true);
+  if(c.heardEn&&c.mode!=="meaning"){await hfSay("You said: "+c.heardEn,"en-US",0.95,run);await pause(300)}
   if(c.mode==="meaning"){
     if(c.en)await hfSay("It means: "+c.en,"en-US",0.95,run);
     await pause(300);
@@ -725,6 +737,7 @@ var RULES=[
 "note: one short tip about Madrid usage, pronunciation or grammar, or an empty string.",
 "fix: only when the person typed Spanish with a mistake, the corrected version of their sentence, otherwise an empty string.",
 "ask: always an empty string. Never ask the person what they want to learn next; they will tell you.",
+"heard_english: when the person said or typed Spanish, the English translation of what they said (for a [voice] message, of the Spanish they most likely meant). When they spoke English, or asked what a phrase means, an empty string.",
 "mode: the word meaning for a meaning request, otherwise the word teach.",
 "Your whole reply must be a single JSON object that starts with { and ends with }. Put no text before or after it.",
 "Do not use markdown."
@@ -771,7 +784,7 @@ function parseJson(t){
 }
 function cleanReply(o){
   if(!o||typeof o!=="object"||Array.isArray(o))throw new Error("Claude's answer wasn't in the expected shape.");
-  var c={es:str(o.spanish),sounds:str(o.sounds_like),en:str(o.meaning),note:str(o.note),fix:str(o.fix),ask:str(o.ask),mode:str(o.mode).toLowerCase()==="meaning"?"meaning":"teach",topic:"Claude",src:"claude"};
+  var c={es:str(o.spanish),sounds:str(o.sounds_like),en:str(o.meaning),note:str(o.note),fix:str(o.fix),ask:str(o.ask),heardEn:str(o.heard_english),mode:str(o.mode).toLowerCase()==="meaning"?"meaning":"teach",topic:"Claude",src:"claude"};
   if(!c.es)throw new Error("Claude's answer had no Spanish line.");
   return c;
 }
@@ -910,6 +923,7 @@ async function runClaude(text,shown,voice,fallback){
   try{
     var c=await askClaude(text,voice);
     th.remove();
+    showHeardEn(c.heardEn);
     addCard(c,true,c.ask);
   }catch(e){
     th.remove();
