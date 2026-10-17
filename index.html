@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Charla">
+<title>Charla Madrid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centered column. The thread scrolls; the dock (topic chips and the input row) stays at the bottom.
+   Palette: plaster blue-grey ground, navy ink, bandera red for actions. */
+:root{
+  color-scheme:light dark;
+  --bg:#edf0f4;--card:#ffffff;--ink:#12203a;--mute:#566480;--red:#c8213b;--red-ink:#ffffff;
+  --gold:#8a5a00;--ok:#1b7a4b;--line:#d2d9e4;--mine:#dde4f0;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Instrument Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1526;--card:#172139;--ink:#eef2fa;--mute:#9daecb;--red:#ff7388;--red-ink:#1a0a10;
+    --gold:#f2c25b;--ok:#62d39a;--line:#2a3858;--mine:#22305a}
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{height:100dvh}
+body{margin:0;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:env(safe-area-inset-top,0px);background:var(--bg);color:var(--ink);font:400 17px/1.5 var(--body)}
+.app{width:100%;max-width:640px;margin:0 auto;display:flex;flex-direction:column;flex:1;min-height:0}
+.top{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;padding-block:16px 6px}
+h1{margin:0;font:700 28px/1.1 var(--display);letter-spacing:-.01em}
+.sub{margin:0;color:var(--mute);font-size:15px}
+#voice{margin-left:auto;max-width:100%;font:400 14px var(--body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.thread{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-block:12px}
+.me{align-self:flex-end;max-width:85%;background:var(--mine);padding:9px 13px;border-radius:14px 14px 4px 14px;overflow-wrap:anywhere}
+.profe{align-self:flex-start;max-width:90%;background:var(--card);border:1px solid var(--line);padding:10px 14px;border-radius:14px 14px 14px 4px}
+.turn{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tutor{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tutor p{margin:0}
+.es{font:700 32px/1.15 var(--display);text-wrap:balance;overflow-wrap:anywhere}
+.sounds{font-style:italic;color:var(--mute);font-size:16px}
+.meaning{font-size:17px}
+.note{color:var(--mute);font-size:15px;margin-top:4px!important}
+.ask{margin:0;padding-inline:4px;color:var(--mute);font-size:15px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{flex:1 1 auto;min-height:44px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font:600 15px var(--body);cursor:pointer}
+.btn.solid{background:var(--red);border-color:var(--red);color:var(--red-ink)}
+.btn.solid.on,.icon.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn:focus-visible,.chip:focus-visible,#msg:focus-visible,#voice:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.dock{display:flex;flex-direction:column;gap:8px;padding-top:10px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{min-height:38px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:500 15px var(--body);cursor:pointer}
+.status{margin:0;font-size:14px;color:var(--red)}
+.row{display:flex;gap:8px}
+#msg{flex:1;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:400 16px var(--body)}
+#msg::placeholder{color:var(--mute)}
+.icon{flex:none;width:48px;min-height:48px;padding:0;display:grid;place-items:center}
+#send{flex:none;padding-inline:18px}
+.btn:disabled{opacity:.5;cursor:default}
+.hf{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hf .btn{flex:0 0 auto;min-height:48px;padding-inline:20px}
+.hf select{flex:1 1 140px;min-width:0;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:500 15px var(--body);padding:0 10px}
+.hf select:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.hfstate{flex:1 1 100%;margin:0;color:var(--mute);font-size:14px}
+.hfstate.live{color:var(--ink);font-size:16px;font-weight:600}
+.chip:disabled{opacity:.5;cursor:default}
+.pill{min-height:32px;padding:4px 12px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font:500 14px var(--body);cursor:pointer}
+.pill:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.conn{display:flex;flex-direction:column;gap:10px;padding:14px;margin-block:4px 8px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.conn p{margin:0;color:var(--mute);font-size:14px}
+.conn a{color:var(--red)}
+#key{flex:1;min-width:0;min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:400 16px var(--body)}
+#key:focus-visible,#model:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+#model{flex:1;min-width:0;min-height:44px;padding:0 10px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px var(--body)}
+.fix{color:var(--mute);font-size:15px;overflow-wrap:anywhere}
+.thinking{align-self:flex-start;display:flex;gap:5px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.thinking i{width:8px;height:8px;border-radius:50%;background:var(--mute);animation:blink 1.2s infinite ease-in-out}
+.thinking i:nth-child(2){animation-delay:.2s}
+.thinking i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.thinking i{animation:none;opacity:.6}}
+.heardbox{display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:96px;margin-block:4px 8px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.spanish{display:flex;flex-direction:column;gap:2px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.esbig{font:700 36px/1.15 var(--display)}
+.essub{font:400 17px/1.4 var(--body);font-style:italic;color:var(--mute)}
+.esmean{font:400 17px/1.4 var(--body)}
+.heardbox p{margin:0;width:100%;overflow-wrap:anywhere;text-wrap:balance}
+.heardbox .final{font:600 26px/1.25 var(--display)}
+.heardbox .interim{font:500 26px/1.25 var(--display);color:var(--mute)}
+.heardbox .empty{font:400 17px/1.4 var(--body);color:var(--mute)}
+@media (max-width:600px){
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none}
+  .esbig{font-size:30px}
+  .heardbox{padding:12px 14px;min-height:80px}
+  .heardbox .final,.heardbox .interim{font-size:22px}
+  .tutor{padding:14px}
+  .es{font-size:26px}
+  h1{font-size:24px}
+  .sub{display:none}
+  .hfstate{font-size:13px}
+  select,input{font-size:16px!important}
+}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Charla</h1>
+    <p class="sub">Spanish from Madrid</p>
+    <select id="voice" aria-label="Spanish voice" hidden></select>
+    <button class="pill" type="button" id="connBtn" aria-expanded="false" aria-controls="conn">Claude: off</button>
+  </header>
+
+  <section class="conn" id="conn" hidden>
+    <p>Optional. Paste an API key from the <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noopener">Claude Console</a> and Claude writes fresh answers for anything you ask. The key stays in this browser on this computer. Without it, the 65 built-in phrases are used.</p>
+    <div class="row">
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="API key (starts with sk-ant-)" aria-label="Anthropic API key">
+      <button class="btn solid" type="button" id="saveKey">Save</button>
+    </div>
+    <div class="row">
+      <select id="model" aria-label="Claude model">
+        <option value="claude-haiku-5-5">Haiku 5.5: fastest and cheapest</option>
+        <option value="claude-sonnet-5-5">Sonnet 5.5: richer answers, about 20 times the cost</option>
+      </select>
+      <button class="btn" type="button" id="removeKey" hidden>Remove key</button>
+    </div>
+    <p id="connStatus" role="status"></p>
+  </section>
+
+  <main class="thread" id="thread" aria-live="polite"></main>
+
+  <div class="heardbox" id="heardBox" aria-live="polite">
+    <div class="spanish" id="esBox" hidden>
+      <p class="esbig" id="esBig"></p>
+      <p class="essub" id="esSub"></p>
+      <p class="esmean" id="esMean"></p>
+    </div>
+    <p id="heardText" class="empty">What you say appears here.</p>
+  </div>
+
+  <div class="dock">
+    <div class="hf">
+      <button class="btn solid" type="button" id="hfBtn">Pause listening</button>
+      <select id="hfTopic" aria-label="Topic to practise"><option value="all">Mix of everything</option></select>
+      <p class="hfstate" id="hfState"></p>
+    </div>
+    <div class="chips" id="chips"></div>
+    <p class="status" id="status" role="status" hidden></p>
+    <form class="row" id="form" autocomplete="off">
+      <input id="msg" type="text" placeholder="Or type it here, like: the bill, please" aria-label="Ask in English">
+      <button class="btn icon" type="button" id="dictate" aria-label="Ask out loud in English" aria-pressed="false" title="Ask out loud in English">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
+      <button class="btn solid" type="submit" id="send">Ask</button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* topic, Spanish, sounds like, English, note, extra search words */
+var RAW=[
+["Basics","Hola, ¿qué tal?","OH-la, keh tal","Hi, how's it going?","People in Madrid say this to everyone, from the barman to a neighbour. The usual answer is: Bien, ¿y tú?","hello hi hey greeting how are you"],
+["Basics","Buenos días","BWEH-nos DEE-as","Good morning","Used until lunch, which in Spain is often 2 pm or later.","morning hello greeting"],
+["Basics","Buenas tardes","BWEH-nas TAR-des","Good afternoon","Use it after lunch until it gets dark.","afternoon evening hello greeting"],
+["Basics","Buenas noches","BWEH-nas NO-ches","Good evening, good night","You also say it when you leave at night.","night evening goodnight bye"],
+["Basics","Por favor","por fa-BOR","Please","","please"],
+["Basics","Muchas gracias","MOO-chas GRA-thee-as","Thank you very much","In Madrid the c in gracias sounds like th in thin.","thanks thank you"],
+["Basics","Perdona","per-DOH-na","Sorry, excuse me","Use perdone with someone older or more formal.","sorry excuse pardon"],
+["Basics","Vale","BAH-leh","Okay, alright","You will hear this all day in Spain. It means okay, fine, deal, got it.","okay ok alright yes fine agree deal"],
+
+["At a bar","Una caña, por favor","OO-na KA-nya, por fa-BOR","A small draught beer, please","A caña is the standard small beer in Madrid. Some bars bring a free tapa with it.","beer draft draught pint drink order"],
+["At a bar","Un café con leche, por favor","oon ka-FEH kon LEH-cheh, por fa-BOR","A coffee with milk, please","","coffee latte milk order"],
+["At a bar","Un cortado, por favor","oon kor-TA-do, por fa-BOR","An espresso with a little milk, please","","coffee espresso order"],
+["At a bar","¿Me pones una ración de tortilla?","meh PO-nes OO-na ra-thee-ON deh tor-TEE-ya","Can I have a portion of Spanish omelette?","Me pones is how people in Spain order, instead of saying I want.","tortilla omelette omelet tapas food portion order"],
+["At a bar","¿Qué me recomiendas?","keh meh reh-ko-mee-EN-das","What do you recommend?","Tú is normal with bar staff in Madrid.","recommend suggest what"],
+["At a bar","Otra, por favor","O-tra, por fa-BOR","Another one, please","","another again more one more"],
+["At a bar","¿Cuánto es?","KWAN-to es","How much is it?","","how much cost price pay total"],
+["At a bar","Un vaso de agua, por favor","oon BA-so deh A-gwa, por fa-BOR","A glass of water, please","","water glass"],
+
+["Restaurant","Una mesa para dos, por favor","OO-na MEH-sa PA-ra dos, por fa-BOR","A table for two, please","","table reservation two seat"],
+["Restaurant","¿Me trae la carta?","meh TRA-eh la KAR-ta","Could you bring me the menu?","La carta is the full menu. El menú is the fixed-price lunch.","menu card"],
+["Restaurant","Soy vegetariano","soy beh-heh-ta-ree-AH-no","I'm vegetarian","A woman says vegetariana.","vegetarian vegan food diet"],
+["Restaurant","Soy alérgico a los frutos secos","soy a-LER-hee-ko a los FROO-tos SEH-kos","I'm allergic to nuts","A woman says alérgica.","allergic allergy nuts"],
+["Restaurant","Voy a tomar el menú del día","boy a to-MAR el meh-NOO del DEE-a","I'll have the set lunch menu","Many Madrid restaurants serve a fixed-price lunch with a drink and dessert.","lunch set menu order have"],
+["Restaurant","Está muy rico","es-TA mooy REE-ko","It's really tasty","Rico means tasty when you talk about food.","delicious tasty good food"],
+["Restaurant","La cuenta, por favor","la KWEN-ta, por fa-BOR","The bill, please","You usually have to ask for it. They will not bring it on their own.","bill check pay"],
+["Restaurant","¿Puedo pagar con tarjeta?","PWEH-do pa-GAR kon tar-HEH-ta","Can I pay by card?","","card pay credit"],
+
+["Metro","Un billete sencillo, por favor","oon bee-YEH-teh sen-THEE-yo, por fa-BOR","A single ticket, please","Billete is the word for ticket in Spain.","ticket single"],
+["Metro","¿Dónde está la parada de metro?","DON-deh es-TA la pa-RA-da deh MEH-tro","Where is the metro stop?","","metro subway station stop"],
+["Metro","¿Qué línea va a Sol?","keh LEE-neh-a ba a sol","Which line goes to Sol?","Sol is the central square, kilometre zero of Spain.","line train sol"],
+["Metro","¿Es la dirección correcta?","es la dee-rek-thee-ON ko-REK-ta","Is this the right direction?","","direction right platform"],
+["Metro","¿Cuántas paradas faltan?","KWAN-tas pa-RA-das FAL-tan","How many stops are left?","","stops left many"],
+["Metro","Tengo que hacer transbordo","TEN-go keh a-THER trans-BOR-do","I have to change lines","Transbordo means a line change.","change transfer"],
+["Metro","Perdona, voy a bajar","per-DOH-na, boy a ba-HAR","Excuse me, I'm getting off","Handy on a packed train.","getting off exit packed"],
+["Metro","¿Dónde puedo coger un taxi?","DON-deh PWEH-do ko-HER oon TAK-see","Where can I get a taxi?","In Spain, coger is a normal verb for taking a bus or a taxi.","taxi cab"],
+
+["Directions","¿Dónde está la Plaza Mayor?","DON-deh es-TA la PLA-tha ma-YOR","Where is the Plaza Mayor?","","plaza mayor square where"],
+["Directions","¿Está lejos?","es-TA LEH-hos","Is it far?","","far distance"],
+["Directions","¿Se puede ir andando?","seh PWEH-deh eer an-DAN-do","Can I walk there?","Andando means on foot in Spain.","walk foot"],
+["Directions","Todo recto","TO-do REK-to","Straight ahead","You will hear this in answers.","straight ahead"],
+["Directions","Gira a la izquierda","HEE-ra a la eeth-kee-ER-da","Turn left","","left turn"],
+["Directions","Gira a la derecha","HEE-ra a la deh-REH-cha","Turn right","","right turn"],
+["Directions","Estoy perdido","es-TOY per-DEE-do","I'm lost","A woman says perdida.","lost"],
+["Directions","¿Me lo puedes enseñar en el mapa?","meh lo PWEH-des en-seh-NYAR en el MA-pa","Can you show me on the map?","","map show"],
+
+["Shops","¿Cuánto cuesta?","KWAN-to KWES-ta","How much does it cost?","","cost price how much"],
+["Shops","Solo estoy mirando, gracias","SO-lo es-TOY mee-RAN-do, GRA-thee-as","I'm just looking, thanks","","just looking browsing"],
+["Shops","¿Tenéis esto en otra talla?","teh-NEH-ees ES-to en O-tra TA-ya","Do you have this in another size?","Tenéis is the vosotros form, for asking a group of staff.","size another clothes"],
+["Shops","¿Puedo probármelo?","PWEH-do pro-BAR-meh-lo","Can I try it on?","","try on fitting room"],
+["Shops","Me lo llevo","meh lo YEH-bo","I'll take it","","buy take purchase"],
+["Shops","¿Aceptáis tarjeta?","a-thep-TA-ees tar-HEH-ta","Do you take cards?","","card credit pay accept"],
+["Shops","¿Me da una bolsa, por favor?","meh da OO-na BOL-sa, por fa-BOR","Could I have a bag, please?","","bag"],
+["Shops","¿A qué hora cierran?","a keh O-ra thee-ER-ran","What time do you close?","Smaller shops often close in the afternoon.","close closing time hours open"],
+
+["Meeting people","Me llamo Sam","meh YA-mo sam","My name is Sam","Swap in your own name.","name called my name"],
+["Meeting people","Mucho gusto","MOO-cho GOOS-to","Nice to meet you","","nice meet pleased"],
+["Meeting people","¿De dónde eres?","deh DON-deh EH-res","Where are you from?","","from where origin"],
+["Meeting people","Estoy aprendiendo español","es-TOY a-pren-dee-EN-do es-pa-NYOL","I'm learning Spanish","","learning study spanish"],
+["Meeting people","Hablo un poco de español","AH-blo oon PO-ko deh es-pa-NYOL","I speak a little Spanish","","speak little spanish"],
+["Meeting people","¿Puedes hablar más despacio?","PWEH-des a-BLAR mas des-PA-thee-o","Can you speak more slowly?","","slowly slow speak"],
+["Meeting people","¿A qué te dedicas?","a keh teh deh-DEE-kas","What do you do for work?","","work job do for a living"],
+["Meeting people","¿Quedamos mañana?","keh-DA-mos ma-NYA-na","Shall we meet up tomorrow?","Quedar is the Spanish verb for arranging to meet.","meet up tomorrow plan"],
+["Meeting people","¿Qué hacéis hoy?","keh a-THEH-ees oy","What are you up to today?","Hacéis is the vosotros form, for a group of friends in Spain.","group friends up to today plans you all"],
+
+["Help","No entiendo","no en-tee-EN-do","I don't understand","","understand"],
+["Help","¿Hablas inglés?","AH-blas een-GLES","Do you speak English?","","english speak"],
+["Help","¿Puedes repetirlo, por favor?","PWEH-des reh-peh-TEER-lo, por fa-BOR","Can you repeat that, please?","","repeat again"],
+["Help","¿Dónde están los servicios?","DON-deh es-TAN los ser-BEE-thee-os","Where is the bathroom?","In Spain the toilets are los servicios or los aseos.","bathroom toilet restroom loo wc"],
+["Help","Necesito ayuda","neh-theh-SEE-to a-YOO-da","I need help","","help need"],
+["Help","Llama a una ambulancia","YA-ma a OO-na am-boo-LAN-thee-a","Call an ambulance","The emergency number in Spain is 112.","ambulance emergency call"],
+["Help","He perdido mi móvil","eh per-DEE-do mee MO-beel","I've lost my phone","Móvil is the word for a mobile phone in Spain.","lost phone mobile cell"],
+["Help","Necesito un médico","neh-theh-SEE-to oon MEH-dee-ko","I need a doctor","","doctor medical sick"]
+];
+var TOPICS=["Basics","At a bar","Restaurant","Metro","Directions","Shops","Meeting people","Help"];
+
+var BANK=RAW.map(function(r){return {topic:r[0],es:r[1],sounds:r[2],en:r[3],note:r[4],kw:r[5],toks:null}});
+
+var $=function(s){return document.querySelector(s)};
+var thread=$("#thread"),form=$("#form"),msg=$("#msg"),dictBtn=$("#dictate"),statusEl=$("#status"),voiceSel=$("#voice"),chipsEl=$("#chips");
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var IS_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+var target=null,voices=[],rec=null,pos={},hf={on:false};
+
+function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
+function note(t){statusEl.textContent=t||"";statusEl.hidden=!t}
+function toEnd(){thread.scrollTop=thread.scrollHeight}
+var heardText=$("#heardText"),esBox=$("#esBox"),esBig=$("#esBig"),esSub=$("#esSub"),esMean=$("#esMean");
+function showSpanish(e){
+  esBig.textContent=e.es||"";
+  esSub.textContent=e.sounds?"Sounds like: "+e.sounds:"";
+  esMean.textContent=e.en||"";
+  esSub.hidden=!e.sounds;esMean.hidden=!e.en;
+  esBox.hidden=!e.es;
+}
+function showHeard(text,interim,emptyMsg){
+  if(!text){heardText.textContent=emptyMsg||"What you say appears here.";heardText.className="empty";return}
+  heardText.textContent=text;
+  heardText.className=interim?"interim":"final";
+}
+function norm(s){return String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim()}
+function sim(a,b){
+  a=norm(a);b=norm(b);var m=a.length,n=b.length;if(!m||!n)return 0;
+  var d=[],x,y;
+  for(x=0;x<=m;x++)d[x]=[x];
+  for(y=1;y<=n;y++)d[0][y]=y;
+  for(x=1;x<=m;x++)for(y=1;y<=n;y++)d[x][y]=Math.min(d[x-1][y]+1,d[x][y-1]+1,d[x-1][y-1]+(a[x-1]===b[y-1]?0:1));
+  return Math.round(100*(1-d[m][n]/Math.max(m,n)));
+}
+
+/* Matching English requests to the phrase bank */
+var STOP={a:1,an:1,the:1,to:1,please:1,say:1,tell:1,teach:1,me:1,want:1,would:1,like:1,can:1,could:1,spanish:1,"in":1,i:1,my:1,"for":1,of:1,and:1};
+function stem(w){return w.length>3&&w.charAt(w.length-1)==="s"?w.slice(0,-1):w}
+function toks(s){
+  return norm(s).split(" ").filter(function(w){return w&&!STOP[w]}).map(stem);
+}
+function stripLead(s){
+  return s.toLowerCase().replace(/^\s*(how (do|would|can|could) (i|you|we) (say|ask|order|get|tell)|(can|could|will) you (teach|tell) me( how to)?( say| ask)?|teach me|i want to (say|ask|learn)|i'?d like to (say|ask)|i would like to (say|ask)|what('s| is) the spanish for|how to say|how to ask)\s*/,"");
+}
+BANK.forEach(function(e){e.toks=toks(e.en+" "+e.kw)});
+function match(text){
+  var q=toks(stripLead(text));
+  if(!q.length)return null;
+  var best=null,bs=0;
+  BANK.forEach(function(e){
+    var hit=0;
+    q.forEach(function(w){if(e.toks.indexOf(w)>=0)hit++});
+    var s=hit/q.length-e.toks.length*0.004;
+    if(hit>0&&s>bs){bs=s;best=e}
+  });
+  return bs>=0.45?best:null;
+}
+
+/* Voices: prefer Spain voices */
+function loadVoices(){
+  if(!window.speechSynthesis)return;
+  var all=speechSynthesis.getVoices().filter(function(v){return /^es/i.test(v.lang)});
+  var spain=all.filter(function(v){return /es[-_]ES/i.test(v.lang)});
+  voices=spain.length?spain:all;
+  voiceSel.innerHTML="";
+  voices.forEach(function(v,i){var o=el("option",null,v.name+" ("+v.lang+")");o.value=i;voiceSel.appendChild(o)});
+  voiceSel.hidden=voices.length<2;
+}
+var speakSeq=0;
+function speak(text,rate,done){
+  if(!window.speechSynthesis){note("This browser can't speak aloud. "+(IS_IOS?"On iPhone, try Safari.":"Use Chrome."));return}
+  speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.lang="es-ES";u.rate=rate||0.9;
+  var v=voices[Number(voiceSel.value)||0];if(v)u.voice=v;
+  var sid=++speakSeq;
+  hfDeaf=true;
+  function fin(){if(sid!==speakSeq)return;hfQuietUntil=Date.now()+900;hfDeaf=false;if(done)done()}
+  u.onend=fin;u.onerror=fin;
+  speechSynthesis.speak(u);
+}
+
+/* A meaning request: say the English first, then the Spanish once */
+function speakMeaning(e){
+  if(!window.speechSynthesis||!e.en){speak(e.es,0.9);return}
+  speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance("It means: "+e.en);
+  u.lang="en-US";u.rate=0.95;
+  var sid=++speakSeq;
+  hfDeaf=true;
+  u.onend=function(){if(sid===speakSeq)speak(e.es,0.9)};
+  u.onerror=function(){if(sid!==speakSeq)return;hfQuietUntil=Date.now()+900;hfDeaf=false};
+  speechSynthesis.speak(u);
+}
+/* "What does X mean", "translate X", "X in English": returns X, or "" when it isn't one */
+function meaningAsk(n){
+  var m=n.match(/^what (?:does|do) (.+) mean(?: in english)?$/)||
+        n.match(/^what (?:is|s) (.+) in english$/)||
+        n.match(/^(?:translate|meaning of|what is the meaning of|what s the meaning of) (.+)$/)||
+        (/^(?:how|say|tell)\b/.test(n)?null:n.match(/^(.+) in english$/));
+  if(!m)return "";
+  var p=m[1].replace(/^(?:the phrase|the word|this phrase|this)\s+/,"").trim();
+  return /^(it|that|this|you say|they say)?$/.test(p)?"":p;
+}
+/* Looks a Spanish phrase up in the built-in phrases, or returns null */
+function meaningLookup(phrase){
+  var sp=hfFindSpanish([phrase]);
+  if(!sp||sp.s<60)return null;
+  return Object.assign({},sp.e,{mode:"meaning"});
+}
+
+/* Listening */
+function micProblem(err){
+  if(!err||err==="no-speech"||err==="aborted")return false;
+  if(err==="not-allowed"||err==="service-not-allowed")note(IS_IOS?"The microphone isn't available. On iPhone, allow it when Safari asks, and make sure Dictation is on in Settings > General > Keyboard.":"The microphone is blocked. Click the icon at the left of the address bar, allow the microphone for this page, then try again.");
+  else if(err==="network")note("Speech recognition needs an internet connection in Chrome. Check your connection and try again.");
+  else note("Voice input stopped. Try again, or type instead.");
+  return true;
+}
+function listen(lang,onHeard,onState){
+  if(!SR){note("This browser has no voice input. "+(IS_IOS?"On iPhone, try Safari.":"Open the file in Chrome."));return}
+  if(rec){try{rec.stop()}catch(e){}return}
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  note("");
+  var r=new SR(),alts=[],err="";
+  rec=r;r.lang=lang;r.interimResults=true;r.maxAlternatives=3;
+  r.onstart=function(){onState(true);showHeard("",false,"Listening…")};
+  r.onresult=function(e){
+    var a=[];
+    for(var k=0;k<e.results[0].length;k++)a.push(e.results[0][k].transcript);
+    alts=a;
+    showHeard(a[0],!e.results[0].isFinal);
+  };
+  r.onerror=function(e){err=e.error||"error"};
+  r.onend=function(){
+    rec=null;onState(false);
+    if(!alts.length)showHeard("",false,"I didn't catch that.");
+    onHeard(alts,err);
+  };
+  try{r.start()}catch(x){rec=null;onState(false);micProblem("start")}
+}
+
+/* Thread pieces */
+function addUser(t){thread.appendChild(el("div","me",t));toEnd()}
+function addProfe(t){thread.appendChild(el("div","profe",t));toEnd()}
+
+function nextIn(topic){
+  var list=BANK.filter(function(e){return e.topic===topic});
+  var i=pos[topic]||0;
+  pos[topic]=(i+1)%list.length;
+  return list[i];
+}
+
+function addCard(e,auto,askText){
+  var turn=el("div","turn"),card=el("article","tutor"),o={spanish:e.es,topic:e.topic,src:e.src||"bank",el:turn};
+  if(e.fix)card.appendChild(el("p","fix","Better way to say it: "+e.fix));
+  /* The phrase, its sound and its meaning are shown once, in the big box above the controls */
+  if(e.note)card.appendChild(el("p","note",e.note));
+
+  var act=el("div","actions"),b1=el("button","btn solid","Listen"),b2=el("button","btn","Slow"),b3=el("button","btn","Next phrase");
+  [b1,b2,b3].forEach(function(b){b.type="button";act.appendChild(b)});
+  b1.onclick=function(){
+    target=o;speak(e.es,0.9);
+  };
+  b2.onclick=function(){
+    target=o;speak(e.es,0.55);
+  };
+  b3.onclick=function(){
+    if(o.src==="claude")claudeNext();
+    else addCard(nextIn(o.topic),true,"");
+  };
+  card.appendChild(act);
+
+  turn.appendChild(card);
+  if(askText)turn.appendChild(el("p","ask",askText));
+  thread.appendChild(turn);
+  target=o;hfCur=e;toEnd();
+  showSpanish(e);
+  if(auto){if(e.mode==="meaning")speakMeaning(e);else speak(e.es,0.9)}
+  return o;
+}
+
+/* Hands-free: one continuous listener that waits for you and only speaks after you do.
+   It uses an English recognizer so your English requests and commands are understood. Nothing is graded:
+   it only checks whether you are repeating the phrase on screen. */
+var hfBtn=$("#hfBtn"),hfState=$("#hfState"),hfTopic=$("#hfTopic");
+var HF_IDLE="Paused. Tap Listen to start again.";
+var HF_WAIT="Listening. Ask in English, or say a Spanish phrase.";
+var HF_TURN="Your turn. Say it, or ask me something else.";
+var PRAISE=["¡Muy bien!","¡Perfecto!","¡Eso es!","¡Genial!","¡Buenísimo!"];
+var TOPIC_WORDS=[
+  ["At a bar",/\b(bar|bars|drink|drinks|tapas)\b/],
+  ["Restaurant",/\b(restaurant|restaurants|dinner|eating)\b/],
+  ["Metro",/\b(metro|subway|train|taxi|transport)\b/],
+  ["Directions",/\b(directions|street|streets|lost|map)\b/],
+  ["Shops",/\b(shop|shops|shopping|store|stores|buying)\b/],
+  ["Meeting people",/\b(people|meeting|friends|introductions)\b/],
+  ["Help",/\b(help|emergency|emergencies|doctor)\b/],
+  ["Basics",/\b(basics|basic|greetings|greeting)\b/]
+];
+var hfRec=null,hfDeaf=false,hfQuietUntil=0,hfCur=null,hfCard=null,hfBusy=false,hfRestarts=0,
+    hfWake=null,hfUserPaused=false,hfRun=0,hfIdle=null,hfIntroDone=false,hfEverStarted=false,hfNeedTap=false;
+
+TOPICS.forEach(function(t){var o=el("option",null,t);o.value=t;hfTopic.appendChild(o)});
+
+function hfSet(t,live){hfState.textContent=t;hfState.classList.toggle("live",!!live)}
+function hfReady(){hfSet(hfCur?HF_TURN:HF_WAIT,true)}
+function pause(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function hfResetIdle(){
+  clearTimeout(hfIdle);
+  hfIdle=setTimeout(function(){hfStop("Paused after a long quiet spell. Tap anywhere to keep listening.")},60*60*1000);
+}
+
+function hfSay(text,lang,rate,run){
+  return new Promise(function(res){
+    if(!window.speechSynthesis||run!==hfRun){res();return}
+    hfDeaf=true;
+    var u=new SpeechSynthesisUtterance(text),done=false,timer;
+    u.lang=lang;u.rate=rate||0.95;
+    if(lang==="es-ES"){var v=voices[Number(voiceSel.value)||0];if(v)u.voice=v}
+    function fin(){if(done)return;done=true;clearTimeout(timer);hfQuietUntil=Date.now()+900;hfDeaf=false;res()}
+    timer=setTimeout(fin,4000+text.length*180);
+    u.onend=fin;u.onerror=fin;
+    speechSynthesis.speak(u);
+  });
+}
+
+/* Matching: an English recognizer writes Spanish as rough English, so compare with both the Spanish
+   and the English-style respelling, and accept a loose match. */
+function hfScore(heard,e){return Math.max(sim(heard,e.es),sim(heard,e.sounds))}
+function hfBest(alts,e){var b=0;alts.forEach(function(t){var s=hfScore(t,e);if(s>b)b=s});return b}
+function hfFindSpanish(alts){
+  var best=null,bs=0;
+  BANK.forEach(function(e){alts.forEach(function(t){var s=hfScore(t,e);if(s>bs){bs=s;best=e}})});
+  return best?{e:best,s:bs}:null;
+}
+
+function hfCommand(n){
+  n=n.replace(/\b(please|can you|could you|just|now|oh|okay|ok|um)\b/g," ").replace(/\s+/g," ").trim();
+  var tests=[
+    ["stop",/^(stop|pause|quit|stop listening|that s all|thats all|i m done|im done|exit)$/],
+    ["slow",/^(slower|slowly|more slowly|slow|say it slower|say it slowly|say that slower|a bit slower)$/],
+    ["meaning",/^(what does it mean|what does that mean|meaning|translate|translation|in english|what is that|what s that|whats that)$/],
+    ["again",/^(again|repeat|repeat that|repeat it|say it again|say that again|one more time|once more)$/],
+    ["next",/^(next|next one|next phrase|another|another one|something else|give me another|new one|skip)$/],
+    ["surprise",/^(surprise me|random|anything|something|quiz me|teach me something)$/]
+  ];
+  for(var i=0;i<tests.length;i++)if(tests[i][1].test(n))return tests[i][0];
+  return "";
+}
+function hfTopicFrom(n){
+  for(var i=0;i<TOPIC_WORDS.length;i++)if(TOPIC_WORDS[i][1].test(n))return TOPIC_WORDS[i][0];
+  return "";
+}
+function hfPickTopic(){
+  if(hfTopic.value!=="all")return hfTopic.value;
+  return hfCur&&TOPICS.indexOf(hfCur.topic)>=0?hfCur.topic:"";
+}
+function hfRandom(){
+  var list=BANK.filter(function(e){return hfTopic.value==="all"||e.topic===hfTopic.value});
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+async function hfTeach(e,withMeaning,run){
+  hfCur=e;
+  hfCard=addCard(e,false,"");
+  hfSet("Listen…",true);
+  if(withMeaning){await hfSay(e.en,"en-US",0.95,run);await pause(250)}
+  await hfSay(e.es,"es-ES",0.9,run);
+  await pause(500);
+  await hfSay(e.es,"es-ES",0.55,run);
+}
+async function hfJudge(e,run,unprompted){
+  if(hfCur!==e){hfCur=e;hfCard=addCard(e,false,"")}
+  await hfSay(PRAISE[Math.floor(Math.random()*PRAISE.length)],"es-ES",1,run);
+  if(unprompted){await pause(200);await hfSay("That means: "+e.en,"en-US",0.95,run)}
+}
+async function hfDoCommand(c,run){
+  if(c==="stop"){hfUserPaused=true;hfStop("Paused. Tap Listen to start again.");return}
+  if(c==="surprise"){await hfTeach(hfRandom(),true,run);return}
+  if(c==="next"){
+    var t=hfPickTopic();
+    await hfTeach(t?nextIn(t):hfRandom(),true,run);
+    return;
+  }
+  if(!hfCur){await hfSay("I haven't taught you anything yet. Ask me how to say something.","en-US",0.95,run);return}
+  hfSet("Listen…",true);
+  if(c==="slow")await hfSay(hfCur.es,"es-ES",0.55,run);
+  else if(c==="meaning"){await hfSay(hfCur.en,"en-US",0.95,run);await pause(250);await hfSay(hfCur.es,"es-ES",0.9,run)}
+  else await hfSay(hfCur.es,"es-ES",0.9,run);
+}
+
+/* Teaching a line Claude wrote: Spanish normal, Spanish slow, then Claude's short English follow-up */
+async function hfTeachClaude(c,run){
+  hfCur=c;
+  hfCard=addCard(c,false,c.ask);
+  hfSet("Listen…",true);
+  if(c.mode==="meaning"){
+    if(c.en)await hfSay("It means: "+c.en,"en-US",0.95,run);
+    await pause(300);
+    await hfSay(c.es,"es-ES",0.9,run);
+    return;
+  }
+  await hfSay(c.es,"es-ES",0.9,run);
+  await pause(500);
+  await hfSay(c.es,"es-ES",0.55,run);
+}
+
+/* The built-in phrases: used when no key is saved or Claude can't answer */
+async function hfBank(alts,heard,n,c,run){
+  if(c){await hfDoCommand(c,run);return}
+  var mq=meaningAsk(n);
+  if(mq){
+    var me=meaningLookup(mq);
+    if(me){
+      hfCur=me;hfCard=addCard(me,false,"");
+      hfSet("Listen…",true);
+      await hfSay("It means: "+me.en,"en-US",0.95,run);
+      await pause(300);
+      await hfSay(me.es,"es-ES",0.9,run);
+    }else await hfSay("Sorry, I don't know that phrase yet. Connect Claude to translate anything.","en-US",0.95,run);
+    return;
+  }
+  var sp=hfFindSpanish(alts);
+  if(sp&&sp.s>=66){await hfJudge(sp.e,run,true);return}
+  var e=match(heard);
+  if(e){await hfTeach(e,false,run);return}
+  var t=hfTopicFrom(n);
+  if(t){await hfTeach(nextIn(t),true,run);return}
+  await hfSay("Sorry, I don't have that one yet. Try asking for the bill, a beer, or where the metro is.","en-US",0.95,run);
+}
+
+async function hfHandle(alts,heard,n,run){
+  /* 1. Repeating the phrase on screen: just encourage (a "what does X mean" question isn't a repeat) */
+  if(hfCur&&!meaningAsk(n)){
+    var s0=hfBest(alts,hfCur);
+    if(s0>=50){addUser(heard);await hfJudge(hfCur,run,false);return}
+  }
+  addUser(heard);
+  /* 2. Spoken commands that need no Claude: stop, again, slower, what does it mean */
+  var c=hfCommand(n);
+  if(c==="stop"||c==="again"||c==="slow"||c==="meaning"){await hfDoCommand(c,run);return}
+  /* 3. Anything else goes to Claude when a key is saved */
+  if(claude.key){
+    var text=heard,voice=true;
+    if(c==="next"){
+      var tp=hfTopic.value!=="all"?" about "+TOPIC_DESC[hfTopic.value]:"";
+      text="Give me the next phrase, one small step further"+(tp||" on the same topic")+".";
+      voice=false;
+    }else if(c==="surprise"){
+      text="Give me one useful everyday phrase for a beginner in Madrid that we haven't done yet.";
+      voice=false;
+    }
+    hfSet("Thinking…",true);
+    try{
+      var card=await askClaude(text,voice);
+      if(run!==hfRun)return;
+      await hfTeachClaude(card,run);
+      return;
+    }catch(err){
+      if(run!==hfRun)return;
+      note(claudeProblem(err));
+      await hfSay("Claude isn't responding, so I'll use my built-in phrases.","en-US",0.95,run);
+    }
+  }
+  await hfBank(alts,heard,n,c,run);
+}
+function hfAccepting(){return hf.on&&!hfDeaf&&!hfBusy&&Date.now()>=hfQuietUntil}
+function hfHeard(alts){
+  if(!hf.on||hfDeaf||hfBusy||Date.now()<hfQuietUntil)return;
+  var heard=alts[0]||"",n=norm(heard);
+  if(!n)return;
+  hfBusy=true;hfResetIdle();
+  var run=hfRun;
+  hfHandle(alts,heard,n,run).catch(function(){}).then(function(){
+    if(run===hfRun){hfBusy=false;hfReady()}
+  });
+}
+
+function hfAskTap(){
+  if(hfNeedTap)return;
+  hfNeedTap=true;
+  hfSet("Tap anywhere on the screen to keep listening.",true);
+  function once(){
+    document.removeEventListener("pointerdown",once);
+    if(hf.on){hfNeedTap=false;hfStartRec();hfReady()}
+  }
+  document.addEventListener("pointerdown",once);
+}
+function hfStartRec(){
+  if(!hf.on)return;
+  var r=new SR();
+  hfRec=r;r.lang="en-US";r.continuous=!IS_IOS;r.interimResults=true;r.maxAlternatives=3;
+  r.onstart=function(){hfEverStarted=true;hfNeedTap=false};
+  r.onresult=function(e){
+    hfRestarts=0;
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      var alts=[];
+      for(var k=0;k<e.results[i].length;k++)alts.push(e.results[i][k].transcript);
+      if(!hfAccepting())continue;
+      if(!e.results[i].isFinal){showHeard(alts[0],true);continue}
+      showHeard(alts[0],false);
+      hfHeard(alts);
+    }
+  };
+  r.onerror=function(e){
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+      /* iPhone only lets a page restart listening from a tap, so ask for one */
+      if(hfEverStarted&&IS_IOS){hfAskTap();return}
+      hfStop(IS_IOS?"The microphone isn't available. On iPhone, allow it when Safari asks, and make sure Dictation is on in Settings > General > Keyboard."
+                   :"The microphone is blocked. Allow it for this page (the icon at the left of the address bar), then reload the page.");
+    }
+  };
+  r.onend=function(){
+    if(!hf.on||hfNeedTap)return;
+    hfRestarts++;
+    setTimeout(hfStartRec,hfRestarts>5?1500:250);
+  };
+  try{r.start()}catch(x){setTimeout(hfStartRec,800)}
+}
+
+async function hfLock(){
+  try{
+    if(navigator.wakeLock&&!hfWake){
+      hfWake=await navigator.wakeLock.request("screen");
+      hfWake.addEventListener("release",function(){hfWake=null});
+    }
+  }catch(e){hfWake=null}
+}
+function hfUnlock(){try{if(hfWake)hfWake.release()}catch(e){}hfWake=null}
+document.addEventListener("visibilitychange",function(){if(hf.on&&document.visibilityState==="visible")hfLock()});
+
+function hfStop(text){
+  hf.on=false;hfRun++;hfBusy=false;clearTimeout(hfIdle);
+  if(hfRec){try{hfRec.onend=null;hfRec.stop()}catch(e){}hfRec=null}
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  hfDeaf=false;
+  hfBtn.textContent="Listen";hfBtn.classList.remove("on");
+  dictBtn.disabled=false;
+  hfUnlock();
+  showHeard("",false);
+  hfSet(text||HF_IDLE,false);
+}
+async function hfStart(auto){
+  if(!SR){note("This browser has no voice input. "+(IS_IOS?"On iPhone, try Safari.":"Open the file in Chrome."));return}
+  if(!window.speechSynthesis){note("This browser can't speak aloud. "+(IS_IOS?"On iPhone, try Safari.":"Open the file in Chrome."));return}
+  note("");
+  if(rec){try{rec.stop()}catch(e){}}
+  hfUserPaused=false;
+  hf.on=true;hfRun++;hfBusy=true;hfRestarts=0;hfEverStarted=false;hfNeedTap=false;
+  var run=hfRun;
+  hfBtn.textContent="Pause listening";hfBtn.classList.add("on");
+  dictBtn.disabled=true;
+  hfLock();
+  hfStartRec();
+  hfResetIdle();
+  hfSet("Starting…",true);
+  showHeard("",false,"Listening. Speak when you're ready.");
+  if(!auto&&!hfIntroDone){
+    await hfSay("I'm listening. Ask me how to say something in English, or say a Spanish phrase.","en-US",0.95,run);
+    hfIntroDone=true;
+  }
+  if(run===hfRun){hfBusy=false;hfReady()}
+}
+hfBtn.addEventListener("click",function(){if(hf.on){hfUserPaused=true;hfStop()}else hfStart(false)});
+hfState.textContent=HF_IDLE;
+
+/* Claude (optional). With an API key saved in this browser, Claude writes fresh answers.
+   Without one, the built-in phrases are used. */
+var RULES=[
+"You are Profe, a warm and concise Spanish tutor for a complete beginner who wants the Spanish spoken in Madrid, Spain (castellano madrileno).",
+"Use Spain vocabulary and forms: tu for one person, vosotros for an informal group, vale, ordenador, movil, coger, zumo, patatas, que tal, me pones, una cana, una racion, el metro. Never use Latin American forms (no ustedes for friends, no celular, carro, ahorita).",
+"Keep each Spanish line short and natural, usually under 10 words, one idea at a time.",
+"The person talks to you out loud or types. They may write in English (teach them how to say it in Spanish), say or write Spanish (answer as a friendly conversation partner in simple Spanish), or ask for a phrase for a situation (give one useful everyday Madrid phrase).",
+"A message that starts with [voice] came from a speech recognizer. It can be wrong, and Spanish may show up as garbled English. Never correct spelling or pronunciation in a voice message. If it sounds like they tried a Spanish phrase, answer the phrase they most likely meant.",
+"If the person asks what a Spanish phrase means (for example 'what does ¿dónde está el baño? mean', 'translate buenos días', or a Spanish phrase followed by 'in English'), it is a meaning request: set mode to meaning, put the phrase they asked about in spanish (with correct accents), and put its English meaning in meaning. Do not teach a different phrase. If they ask what your last Spanish line meant, give that line and its meaning. In a [voice] meaning request the Spanish may be garbled English, so use the Spanish phrase they most likely meant.",
+"There is no scoring or grading. Be encouraging.",
+"Reply with only one JSON object and no other text, with these string fields:",
+"spanish: the Spanish line to say or repeat, with correct accents and punctuation.",
+"sounds_like: a respelling for an English speaker with the stressed syllable in capitals; write c before e or i, and z, as TH, as people do in Madrid.",
+"meaning: the plain English meaning.",
+"note: one short tip about Madrid usage, pronunciation or grammar, or an empty string.",
+"fix: only when the person typed Spanish with a mistake, the corrected version of their sentence, otherwise an empty string.",
+"ask: always an empty string. Never ask the person what they want to learn next; they will tell you.",
+"mode: the word meaning for a meaning request, otherwise the word teach.",
+"Your whole reply must be a single JSON object that starts with { and ends with }. Put no text before or after it.",
+"Do not use markdown."
+].join("\n");
+
+var claude={key:"",model:"claude-haiku-5-5",history:[]};
+var waiting=false;
+var sendBtn=$("#send");
+var TOPIC_DESC={
+  "Basics":"greetings and basic politeness in Madrid",
+  "At a bar":"ordering a drink and a tapa at a bar in Madrid",
+  "Restaurant":"eating at a restaurant in Madrid",
+  "Metro":"using the Madrid metro",
+  "Directions":"asking for directions in the street",
+  "Shops":"buying something in a shop or market",
+  "Meeting people":"meeting someone new",
+  "Help":"asking for help or handling an emergency"
+};
+
+function store(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+function stored(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+function str(x){return typeof x==="string"?x.trim():""}
+function parseJson(t){
+  var cands=[t.trim()];
+  var fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if(fence)cands.push(fence[1].trim());
+  var starts=0;
+  for(var i=0;i<t.length&&starts<6;i++){
+    if(t.charAt(i)!=="{")continue;
+    starts++;
+    var depth=0,inStr=false,esc=false;
+    for(var j=i;j<t.length;j++){
+      var ch=t.charAt(j);
+      if(inStr){if(esc)esc=false;else if(ch==="\\")esc=true;else if(ch==='"')inStr=false;continue}
+      if(ch==='"')inStr=true;
+      else if(ch==="{")depth++;
+      else if(ch==="}"){depth--;if(depth===0){cands.push(t.slice(i,j+1));break}}
+    }
+  }
+  for(var k=0;k<cands.length;k++){
+    try{var o=JSON.parse(cands[k]);if(o&&typeof o==="object"&&!Array.isArray(o))return o}catch(e){}
+  }
+  throw new Error("unreadable");
+}
+function cleanReply(o){
+  if(!o||typeof o!=="object"||Array.isArray(o))throw new Error("Claude's answer wasn't in the expected shape.");
+  var c={es:str(o.spanish),sounds:str(o.sounds_like),en:str(o.meaning),note:str(o.note),fix:str(o.fix),ask:str(o.ask),mode:str(o.mode).toLowerCase()==="meaning"?"meaning":"teach",topic:"Claude",src:"claude"};
+  if(!c.es)throw new Error("Claude's answer had no Spanish line.");
+  return c;
+}
+async function postClaude(body){
+  var ctl=new AbortController(),timer=setTimeout(function(){ctl.abort()},30000);
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",signal:ctl.signal,
+      headers:{
+        "content-type":"application/json",
+        "x-api-key":claude.key,
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify(body)
+    });
+    var data=null;
+    try{data=await res.json()}catch(e){}
+    if(!res.ok){
+      var er=new Error(data&&data.error&&data.error.message?data.error.message:"HTTP "+res.status);
+      er.status=res.status;
+      throw er;
+    }
+    return data;
+  }finally{clearTimeout(timer)}
+}
+async function askClaude(text,voice){
+  var content=(voice?"[voice] ":"")+text;
+  var msgs=claude.history.slice(-12).concat([{role:"user",content:content}]);
+  var body={model:claude.model,max_tokens:4096,system:RULES,messages:msgs,output_config:{effort:"low"}};
+  var data;
+  try{data=await postClaude(body)}
+  catch(e){
+    if(e&&e.status===400&&/effort|output_config/i.test(e.message||"")){
+      delete body.output_config;
+      data=await postClaude(body);
+    }else throw e;
+  }
+  var txt=(data.content||[]).filter(function(b){return b.type==="text"}).map(function(b){return b.text||""}).join("");
+  var obj;
+  try{obj=parseJson(txt)}
+  catch(pe){
+    var er=new Error(data.stop_reason==="max_tokens"&&!txt?"Claude ran out of room before answering.":"Claude's answer wasn't readable"+(txt?": "+txt.slice(0,120):"."));
+    er.raw=txt;
+    throw er;
+  }
+  var c=cleanReply(obj);
+  claude.history.push({role:"user",content:content},{role:"assistant",content:JSON.stringify(obj)});
+  return c;
+}
+function claudeProblem(e){
+  var m=e&&e.message?String(e.message):"";
+  if(e&&e.raw!==undefined)return m;
+  if(e&&e.name==="AbortError")return "Claude took too long to answer.";
+  if(e&&e.status===401)return "Claude rejected the API key. Open Claude settings and check it.";
+  if(e&&e.status===403)return "This API key isn't allowed to do that. Check it in the Console.";
+  if(/credit balance/i.test(m))return "Your API credit balance is too low. Add credit in the Console.";
+  if(e&&e.status===429)return "Too many requests. Wait a moment and try again.";
+  if(e&&e.status>=500)return "Claude is busy right now. Try again in a moment.";
+  if(e&&e.name==="TypeError")return "Couldn't reach Claude. Check your internet connection.";
+  return "Claude couldn't answer: "+m.slice(0,140);
+}
+
+/* Connection panel */
+var connBtn=$("#connBtn"),connBox=$("#conn"),keyIn=$("#key"),saveBtn=$("#saveKey"),removeBtn=$("#removeKey"),
+    modelSel=$("#model"),connStatus=$("#connStatus");
+function refreshConn(){
+  connBtn.textContent=claude.key?"Claude: on":"Claude: off";
+  removeBtn.hidden=!claude.key;
+  connStatus.textContent=claude.key
+    ?"A key is saved in this browser. Claude writes the answers."
+    :"No key saved. The 65 built-in phrases are used.";
+}
+function loadConn(){
+  claude.key=stored("charla_key");
+  var m=stored("charla_model");
+  if(m&&/^claude-/.test(m))claude.model=m;
+  modelSel.value=claude.model;
+  if(modelSel.value!==claude.model)claude.model=modelSel.value;
+  refreshConn();
+}
+connBtn.addEventListener("click",function(){
+  var open=connBox.hidden;
+  connBox.hidden=!open;
+  connBtn.setAttribute("aria-expanded",open?"true":"false");
+  if(open)keyIn.focus();
+});
+saveBtn.addEventListener("click",async function(){
+  var k=keyIn.value.trim();
+  if(k.length<20){connStatus.textContent="That doesn't look like an API key. Copy the whole key from the Console.";return}
+  saveBtn.disabled=true;
+  connStatus.textContent="Checking the key…";
+  var old=claude.key;
+  claude.key=k;
+  try{
+    await postClaude({model:claude.model,max_tokens:8,messages:[{role:"user",content:"Reply with: ok"}]});
+    store("charla_key",k);
+    keyIn.value="";
+    claude.history=[];
+    refreshConn();
+    connStatus.textContent="Connected. Claude will write the answers.";
+  }catch(e){
+    claude.key=old;
+    connStatus.textContent=claudeProblem(e);
+  }
+  saveBtn.disabled=false;
+});
+removeBtn.addEventListener("click",function(){
+  store("charla_key",null);
+  claude.key="";claude.history=[];
+  refreshConn();
+});
+modelSel.addEventListener("change",function(){
+  claude.model=modelSel.value;
+  store("charla_model",claude.model);
+  claude.history=[];
+});
+
+/* Asking */
+function setWaiting(on){
+  waiting=on;sendBtn.disabled=on;if(hf.on)hfBusy=on;
+  Array.prototype.forEach.call(chipsEl.children,function(c){c.disabled=on});
+}
+function addThinking(){
+  var d=el("div","thinking");
+  d.setAttribute("aria-label","Thinking");
+  d.appendChild(el("i"));d.appendChild(el("i"));d.appendChild(el("i"));
+  thread.appendChild(d);toEnd();
+  return d;
+}
+async function runClaude(text,shown,voice,fallback){
+  if(waiting)return;
+  setWaiting(true);
+  if(shown)addUser(shown);
+  var th=addThinking();
+  try{
+    var c=await askClaude(text,voice);
+    th.remove();
+    addCard(c,true,c.ask);
+  }catch(e){
+    th.remove();
+    if(e&&e.raw)addProfe(e.raw.slice(0,500));
+    note(claudeProblem(e)+" Using the built-in phrases.");
+    fallback();
+  }
+  setWaiting(false);
+}
+function bankAsk(t,showUser){
+  if(showUser)addUser(t);
+  var mq=meaningAsk(norm(t));
+  if(mq){
+    var me=meaningLookup(mq);
+    if(me)addCard(me,true,"");
+    else addProfe("I don't know that phrase yet. Connect Claude (top right) and I can tell you what any Spanish phrase means.");
+    return;
+  }
+  var e=match(t);
+  if(e){addCard(e,true,"");return}
+  addProfe("I don't have that one yet. This version knows about "+BANK.length+" everyday phrases. Try asking for the bill, a beer, the metro or the bathroom, or pick a topic below. Connect Claude (top right) to ask for anything.");
+}
+function randomBank(){return BANK[Math.floor(Math.random()*BANK.length)]}
+function handleAsk(t,voice){
+  if(waiting)return;
+  showHeard(t,false);
+  if(claude.key)runClaude(t,t,voice,function(){bankAsk(t,false)});
+  else bankAsk(t,true);
+}
+function claudeNext(){
+  runClaude("Give me the next phrase, one small step further on the same topic.","Next phrase",false,function(){
+    addCard(randomBank(),true,"");
+  });
+}
+function topicRequest(topic){
+  if(waiting)return;
+  if(claude.key){
+    runClaude("Give me one useful phrase for this situation: "+TOPIC_DESC[topic],"Phrase: "+topic.toLowerCase(),false,function(){
+      addCard(nextIn(topic),true,"");
+    });
+  }else{
+    addCard(nextIn(topic),true,"");
+  }
+}
+
+/* Wiring */
+form.addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var t=msg.value.trim();
+  if(!t)return;
+  msg.value="";
+  handleAsk(t,false);
+});
+dictBtn.addEventListener("click",function(){
+  listen("en-US",function(alts,err){
+    if(micProblem(err))return;
+    if(alts&&alts[0])handleAsk(alts[0],true);
+  },function(on){dictBtn.classList.toggle("on",on);dictBtn.setAttribute("aria-pressed",on?"true":"false")});
+});
+dictBtn.hidden=true; /* always listening, so no separate mic button */
+
+TOPICS.forEach(function(t){
+  var b=el("button","chip",t);b.type="button";
+  b.onclick=function(){topicRequest(t)};
+  chipsEl.appendChild(b);
+});
+var sur=el("button","chip","Surprise me");sur.type="button";
+sur.onclick=function(){
+  if(waiting)return;
+  if(claude.key){
+    runClaude("Give me one useful everyday phrase for a beginner in Madrid that we haven't done yet.","Surprise me",false,function(){
+      addCard(randomBank(),true,"");
+    });
+  }else{
+    addCard(randomBank(),true,"");
+  }
+};
+chipsEl.appendChild(sur);
+
+if(window.speechSynthesis){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+
+/* iPhone only lets a page speak after a tap, so speak a silent line on the first tap to unlock it */
+var speechUnlocked=false;
+function unlockSpeech(ev){
+  var onBtn=ev&&ev.target&&hfBtn.contains(ev.target);
+  if(!onBtn&&!hf.on&&!hfUserPaused&&SR&&window.speechSynthesis)hfStart(false);
+  if(speechUnlocked||!window.speechSynthesis)return;
+  speechUnlocked=true;
+  try{var u=new SpeechSynthesisUtterance(" ");u.volume=0;speechSynthesis.speak(u)}catch(e){}
+}
+["pointerdown","touchend","keydown"].forEach(function(t){document.addEventListener(t,unlockSpeech,{passive:true})});
+
+loadConn();
+pos["Basics"]=1;
+addCard(BANK[0],false,"");
+/* Always listening: start as soon as the page opens. If the browser wants a tap first, the first tap starts it. */
+if(SR&&window.speechSynthesis)hfStart(true);
+else hfSet("This browser has no voice input, so type below.",false);
+})();
+</script>
+</body>
+</html>
