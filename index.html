@@ -47,7 +47,7 @@ h1{margin:0;font:700 28px/1.1 var(--display);letter-spacing:-.01em}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .btn{flex:1 1 auto;min-height:44px;padding:10px 14px;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font:600 15px var(--body);cursor:pointer}
 .btn.solid{background:var(--red);border-color:var(--red);color:var(--red-ink)}
-.btn.solid.on,.icon.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.btn.on,.btn.solid.on,.icon.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .btn:focus-visible,.chip:focus-visible,#msg:focus-visible,#voice:focus-visible{outline:3px solid var(--red);outline-offset:2px}
 .dock{display:flex;flex-direction:column;gap:8px;padding-top:10px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
@@ -149,6 +149,7 @@ h1{margin:0;font:700 28px/1.1 var(--display);letter-spacing:-.01em}
   <div class="dock">
     <div class="hf">
       <button class="btn solid" type="button" id="hfBtn">Pause listening</button>
+      <button class="btn" type="button" id="drillBtn" aria-pressed="false" title="I say a phrase in English, then in Spanish, then you repeat it">Phrase drill: off</button>
       <select id="hfTopic" aria-label="Topic to practise"><option value="all">Mix of everything</option></select>
       <p class="hfstate" id="hfState"></p>
     </div>
@@ -571,6 +572,7 @@ async function hfTeachClaude(c,run){
   hfCard=addCard(c,false,c.ask);
   hfSet("Listen…",true);
   if(c.heardEn&&c.mode!=="meaning"){await hfSay("You said: "+c.heardEn,"en-US",0.95,run);await pause(300)}
+  else if(hfDrill&&c.en&&c.mode!=="meaning"){await hfSay(c.en,"en-US",0.95,run);await pause(350)}
   if(c.mode==="meaning"){
     if(c.en)await hfSay("It means: "+c.en,"en-US",0.95,run);
     await pause(300);
@@ -610,7 +612,7 @@ async function hfHandle(alts,heard,n,run){
   /* 1. Repeating the phrase on screen: just encourage (a "what does X mean" question isn't a repeat) */
   if(hfCur&&!meaningAsk(n)){
     var s0=hfBest(alts,hfCur);
-    if(s0>=50){addUser(heard);await hfJudge(hfCur,run,false);return}
+    if(s0>=50){addUser(heard);await hfJudge(hfCur,run,false);if(hfDrill&&run===hfRun){await pause(700);await hfDrillNext(run)}return}
   }
   addUser(heard);
   /* 2. Spoken commands that need no Claude: stop, again, slower, what does it mean */
@@ -641,6 +643,44 @@ async function hfHandle(alts,heard,n,run){
   }
   await hfBank(alts,heard,n,c,run);
 }
+/* Phrase drill: I say the phrase in English, then in Spanish, then you repeat it. After you repeat it, the next one comes. */
+var drillBtn=$("#drillBtn"),hfDrill=false;
+function setDrill(on){
+  hfDrill=on;
+  drillBtn.textContent="Phrase drill: "+(on?"on":"off");
+  drillBtn.classList.toggle("on",on);
+  drillBtn.setAttribute("aria-pressed",on?"true":"false");
+}
+async function hfDrillNext(run){
+  if(run!==hfRun||!hfDrill)return;
+  if(claude.key){
+    var tp=hfTopic.value!=="all"?" about "+TOPIC_DESC[hfTopic.value]:"";
+    hfSet("Thinking…",true);
+    try{
+      var card=await askClaude("Give me the next phrase, one small step further"+(tp||" on the same topic")+".",false);
+      if(run!==hfRun)return;
+      await hfTeachClaude(card,run);
+      await hfSay("Your turn.","en-US",0.95,run);
+      return;
+    }catch(err){
+      if(run!==hfRun)return;
+      note(claudeProblem(err));
+    }
+  }
+  var t=hfPickTopic();
+  await hfTeach(t?nextIn(t):hfRandom(),true,run);
+  await hfSay("Your turn.","en-US",0.95,run);
+}
+drillBtn.addEventListener("click",function(){
+  if(hfDrill){setDrill(false);return}
+  setDrill(true);
+  if(!hf.on){if(!SR||!window.speechSynthesis){setDrill(false);note("This browser has no voice input.");return}hfStart(true)}
+  if(hfBusy||waiting)return;
+  hfBusy=true;hfResetIdle();
+  var run=hfRun;
+  hfDrillNext(run).catch(function(){}).then(function(){if(run===hfRun){hfBusy=false;hfReady()}});
+});
+
 function hfAccepting(){return hf.on&&!hfDeaf&&!hfBusy&&Date.now()>=hfQuietUntil}
 function hfHeard(alts){
   if(!hf.on||hfDeaf||hfBusy||Date.now()<hfQuietUntil)return;
@@ -707,6 +747,7 @@ function hfUnlock(){try{if(hfWake)hfWake.release()}catch(e){}hfWake=null}
 document.addEventListener("visibilitychange",function(){if(hf.on&&document.visibilityState==="visible")hfLock()});
 
 function hfStop(text){
+  setDrill(false);
   hf.on=false;hfRun++;hfBusy=false;clearTimeout(hfIdle);
   if(hfRec){try{hfRec.onend=null;hfRec.stop()}catch(e){}hfRec=null}
   if(window.speechSynthesis)speechSynthesis.cancel();
