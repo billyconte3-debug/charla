@@ -309,13 +309,34 @@ function match(text){
 }
 
 /* Voices: prefer Spain voices */
+/* Rank the Spanish voices so the most natural Spain voice comes first */
+function voiceScore(v){
+  var n=v.name+" "+(v.voiceURI||""),sc=0;
+  if(/es[-_]ES/i.test(v.lang))sc+=40;
+  else if(/es[-_](MX|US|419|AR|CO|CL|PE|VE)/i.test(v.lang))sc-=10;
+  if(/premium|enhanced|natural|neural|online|siri/i.test(n))sc+=30;
+  if(/^google/i.test(v.name))sc+=20;
+  if(/m[oó]nica|jorge|marisol|elvira|[aá]lvaro|luc[ií]a|abril|alvaro|pablo|helena/i.test(v.name))sc+=15;
+  if(/\(Spanish \(Spain\)\)/i.test(v.name))sc-=25;
+  if(/grandma|grandpa|rocko|reed|sandy|shelley|flo|eddy|bad news|bells|boing|bubbles|cellos|zarvox|whisper|trinoids|organ|good news|jester|superstar|wobble/i.test(v.name))sc-=20;
+  if(v.localService===false)sc+=5;
+  return sc;
+}
+function voiceLabel(v,i){
+  var n=v.name.replace(/\s*\(Spanish \(Spain\)\)/i,"");
+  var q=/premium|enhanced|natural|neural|online|siri/i.test(v.name+" "+(v.voiceURI||""))?" · high quality":"";
+  return (i===0?"★ ":"")+n+" ("+v.lang+")"+q;
+}
 function loadVoices(){
   if(!window.speechSynthesis)return;
   var all=speechSynthesis.getVoices().filter(function(v){return /^es/i.test(v.lang)});
-  var spain=all.filter(function(v){return /es[-_]ES/i.test(v.lang)});
-  voices=spain.length?spain:all;
+  all.sort(function(a,b){return voiceScore(b)-voiceScore(a)});
+  voices=all;
+  var saved=stored("charla_voice"),pick=0;
+  voices.forEach(function(v,i){if(saved&&v.name===saved)pick=i});
   voiceSel.innerHTML="";
-  voices.forEach(function(v,i){var o=el("option",null,v.name+" ("+v.lang+")");o.value=i;voiceSel.appendChild(o)});
+  voices.forEach(function(v,i){var o=el("option",null,voiceLabel(v,i));o.value=i;voiceSel.appendChild(o)});
+  voiceSel.value=String(pick);
   voiceSel.hidden=voices.length<2;
 }
 var speakSeq=0;
@@ -1004,6 +1025,11 @@ sur.onclick=function(){
 chipsEl.appendChild(sur);
 
 if(window.speechSynthesis){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+voiceSel.addEventListener("change",function(){
+  var v=voices[Number(voiceSel.value)||0];
+  if(v)store("charla_voice",v.name);
+  speak("Hola, ¿qué tal? Me llamo Profe.",0.9);
+});
 
 /* iPhone only lets a page speak after a tap, so speak a silent line on the first tap to unlock it */
 var speechUnlocked=false;
